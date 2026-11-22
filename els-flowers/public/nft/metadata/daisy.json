@@ -1,0 +1,16 @@
+{
+  "name": "Daisy - Bronze Tier",
+  "description": "Blooming Flower by El's Flowers & Gifts. 10% discount on purchases.",
+  "image": "https://florist-sheraz.netlify.app/nft/daisy.jpg",
+  "attributes": [
+    {
+      "trait_type": "Tier",
+      "value": "Bronze"
+    },
+    {
+      "trait_type": "Discount/Perk",
+      "value": "10% discount on purchases"
+    }
+  ],
+  "image_ipfs": "ipfs://Qma1LDBj9biwYnRbErz88faCZMTRJUB9YhAzEdoG1xGhuM"
+}

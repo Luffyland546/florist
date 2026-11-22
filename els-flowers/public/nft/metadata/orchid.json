@@ -1,0 +1,16 @@
+{
+  "name": "Orchid - Gold Tier",
+  "description": "Blooming Flower by El's Flowers & Gifts. 20% discount + plant care & decorating workshops.",
+  "image": "https://florist-sheraz.netlify.app/nft/orchid.jpg",
+  "attributes": [
+    {
+      "trait_type": "Tier",
+      "value": "Gold"
+    },
+    {
+      "trait_type": "Discount/Perk",
+      "value": "20% discount + plant care & decorating workshops"
+    }
+  ],
+  "image_ipfs": "ipfs://QmQhTcNxCzmi1WVYMDDGNsza3zX48nJeDM7ZVemBphC3dF"
+}

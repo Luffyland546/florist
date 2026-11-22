@@ -1,0 +1,16 @@
+{
+  "name": "Peony - Silver Tier",
+  "description": "Blooming Flower by El's Flowers & Gifts. 15% discount + bouquet-making classes at home.",
+  "image": "https://florist-sheraz.netlify.app/nft/peony.jpg",
+  "attributes": [
+    {
+      "trait_type": "Tier",
+      "value": "Silver"
+    },
+    {
+      "trait_type": "Discount/Perk",
+      "value": "15% discount + bouquet-making classes at home"
+    }
+  ],
+  "image_ipfs": "ipfs://QmQcrbPeLSuTGugvuZQeoDhy3pJZj6a2ajGDrzpj7reJpy"
+}

@@ -3,7 +3,8 @@ const NFT_ABI=["function claimTier(uint8)","function tierOf(address) view return
 const TIERS=[{id:1,name:"Daisy",tier:"Bronze",at:1000,perk:"10% off every purchase",img:"nft/daisy.jpg"},{id:2,name:"Peony",tier:"Silver",at:5000,perk:"15% off + bouquet-making classes at home",img:"nft/peony.jpg"},{id:3,name:"Orchid",tier:"Gold",at:10000,perk:"20% off + plant care & decorating workshops",img:"nft/orchid.jpg"}];
 const PRODUCTS=[["img/p1.jpg","Seasonal Bouquet",35],["img/p2.jpg","Bridal Bouquet",120],["img/p3.jpg","Dozen Red Roses",55],["img/p4.jpg","Bridesmaid Posy",30],["img/p5.jpg","Wedding Corsage",15],["img/p6.jpg","Potted Orchid",40]];
 const NETS={1337:"Ganache (local)",11155111:"Sepolia testnet"};
-const IPFS="https://gateway.pinata.cloud/ipfs/";
+const GATEWAYS=["https://gateway.pinata.cloud/ipfs/","https://ipfs.io/ipfs/","https://dweb.link/ipfs/","https://cloudflare-ipfs.com/ipfs/"];
+const LOCAL={Daisy:"nft/daisy.jpg",Peony:"nft/peony.jpg",Orchid:"nft/orchid.jpg"};
 let provider,signer,me,rose,nft,isOwner=false;
 const DEMO=window.DEMO_MODE||location.search.includes("demo");
 const LS="els_loggedout";
@@ -81,12 +82,21 @@ async function refresh(){
   document.querySelectorAll("[data-claim]").forEach(b=>{const id=+b.dataset.claim;b.disabled=!(Number(tier)<id&&L>=TIERS[id-1].at);b.textContent=Number(tier)>=id?"Claimed ✓":"Claim "+TIERS[id-1].name+" NFT"});
   await loadNfts();
 }
+
+async function fetchIpfsJson(uri){
+  if(!uri.startsWith("ipfs://"))return (await fetch(uri)).json();
+  for(const g of GATEWAYS){try{const r=await fetch(g+uri.slice(7));if(r.ok)return await r.json()}catch{}}
+  throw new Error("metadata unreachable");
+}
 async function loadNfts(){
   const n=Number(await nft.nextId()),out=[];
-  for(let id=1;id<n;id++){try{if((await nft.ownerOf(id)).toLowerCase()!==me.toLowerCase())continue;
-    const uri=await nft.tokenURI(id),meta=await (await fetch(uri.replace("ipfs://",IPFS))).json().catch(()=>({name:"NFT #"+id}));
-    const img=meta.image?meta.image.replace("ipfs://",IPFS):"";
-    out.push(`<div class="card tier">${img?`<img src="${img}">`:""}<h3>${meta.name||"NFT"}</h3><p>Token #${id} · ${await nft.kindOf(id)}</p></div>`)}catch{}}
+  for(let id=1;id<n;id++){try{
+    if((await nft.ownerOf(id)).toLowerCase()!==me.toLowerCase())continue;
+    const kind=await nft.kindOf(id);
+    const meta=await fetchIpfsJson(await nft.tokenURI(id)).catch(()=>({name:kind+" NFT #"+id}));
+    const remote=meta.image?(meta.image.startsWith("ipfs://")?GATEWAYS[0]+meta.image.slice(7):meta.image):"",local=LOCAL[kind]||"";
+    out.push(`<div class="card tier"><img src="${remote||local}" alt="${meta.name||kind}" onerror="if(this.dataset.f)return;this.dataset.f=1;this.src='${local}'"><h3>${meta.name||kind}</h3><p>Token #${id} · ${kind}</p></div>`);
+  }catch{}}
   $("myNfts").innerHTML=out.join("")||'<p class="muted">No NFTs yet — keep collecting Roses!</p>';
 }
 
