@@ -1,0 +1,6 @@
+# The site is a static front end that lives in els-flowers/public.
+# There is no build step: the Hardhat/Express tooling in els-flowers is for
+# local contract work only, so Netlify just publishes the folder as-is.
+[build]
+  command = ""
+  publish = "els-flowers/public"
