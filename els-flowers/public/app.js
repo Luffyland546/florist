@@ -5,6 +5,9 @@ const PRODUCTS=[["img/p1.jpg","Seasonal Bouquet",35],["img/p2.jpg","Bridal Bouqu
 const NETS={1337:"Ganache (local)",11155111:"Sepolia testnet"};
 const IPFS="https://gateway.pinata.cloud/ipfs/";
 let provider,signer,me,rose,nft,isOwner=false;
+const DEMO=window.DEMO_MODE||location.search.includes("demo");
+const LS="els_loggedout";
+const flag={get:()=>{try{return localStorage.getItem(LS)}catch{return null}},set:v=>{try{v?localStorage.setItem(LS,"1"):localStorage.removeItem(LS)}catch{}}};
 const $=id=>document.getElementById(id);
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),4200)};
 const fmtErr=e=>e.reason||e.shortMessage||e.message||String(e);
@@ -15,21 +18,58 @@ $("tierCards").innerHTML=TIERS.map(t=>`<div class="card tier"><img src="${t.img}
 $("products").innerHTML=PRODUCTS.map(p=>`<div class="card prod"><div class="em"><img src="${p[0]}" alt="${p[1]}" loading="lazy"></div><h3>${p[1]}</h3><b>€${p[2]}</b><p class="muted">Earns ${Math.floor(p[2]/25)} Rose${p[2]>=50?"s":""}</p></div>`).join("");
 const pe=document.querySelector(".petals");for(let i=0;i<14;i++){const s=document.createElement("i");s.textContent=["🌸","🌷","🌼"][i%3];s.style.cssText=`left:${Math.random()*100}%;font-size:${14+Math.random()*16}px;animation-duration:${9+Math.random()*10}s;animation-delay:-${Math.random()*12}s`;pe.appendChild(s)}
 
-async function connect(){
-  if(window.DEMO_MODE||location.search.includes("demo")){const d=makeDemo();me=d.me;rose=d.rose;nft=d.nft;isOwner=true;$("connect").textContent="Demo wallet";$("net").textContent="DEMO MODE · simulated wallet (no blockchain)";$("staff").hidden=$("staffLink").hidden=false;return refresh();}
-  if(!window.ethereum)return toast("Install MetaMask first: metamask.io");
-  provider=new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts",[]);signer=await provider.getSigner();me=await signer.getAddress();
-  const chainId=Number((await provider.getNetwork()).chainId);
-  $("connect").textContent=me.slice(0,6)+"…"+me.slice(-4);
-  $("net").textContent=(NETS[chainId]||"Unsupported network ("+chainId+")")+" · "+me.slice(0,8)+"…";
-  let dep;try{dep=(await (await fetch("deployments.json?"+Date.now())).json())[chainId]}catch{}
-  if(!dep)return toast("No deployment on this network. Switch MetaMask to Ganache (1337) or Sepolia.");
-  rose=new ethers.Contract(dep.rose,ROSE_ABI,signer);nft=new ethers.Contract(dep.nft,NFT_ABI,signer);
-  isOwner=(await rose.owner()).toLowerCase()===me.toLowerCase();
+// ---- wallet: connect / switch account / log out ----
+const switchBtn=document.createElement("button"),outBtn=document.createElement("button");
+switchBtn.className=outBtn.className="btn ghost";switchBtn.textContent="Switch account";outBtn.textContent="Log out";
+switchBtn.hidden=outBtn.hidden=true;switchBtn.style.marginLeft=outBtn.style.marginLeft="8px";
+$("connect").after(switchBtn);switchBtn.after(outBtn);
+
+function resetUI(){
+  me=signer=rose=nft=null;isOwner=false;
+  $("connect").textContent="Connect MetaMask";switchBtn.hidden=outBtn.hidden=true;
+  $("net").textContent="Not connected";$("staff").hidden=$("staffLink").hidden=true;
+  ["bal","life","disc"].forEach(i=>$(i).textContent="–");
+  $("tierName").textContent="Connect wallet";$("barFill").style.width="0";
+  $("barText").textContent="Connect your wallet to see progress.";
+  $("myNfts").innerHTML='<p class="muted">Connect your wallet.</p>';
+  document.querySelectorAll("[data-claim]").forEach(b=>b.disabled=true);
+}
+
+async function setup(){
+  if(DEMO){const d=makeDemo();me=d.me;rose=d.rose;nft=d.nft;isOwner=true;
+    $("net").textContent="DEMO MODE · simulated wallet (no blockchain)";
+  }else{
+    provider=new ethers.BrowserProvider(window.ethereum);   // fresh provider each time = no stale account/network
+    signer=await provider.getSigner();me=await signer.getAddress();
+    const chainId=Number((await provider.getNetwork()).chainId);
+    $("net").textContent=(NETS[chainId]||"Unsupported network ("+chainId+")")+" · "+me.slice(0,8)+"…"+me.slice(-4);
+    let dep;try{dep=(await (await fetch("deployments.json?"+Date.now())).json())[chainId]}catch{}
+    if(!dep){rose=nft=null;isOwner=false;$("staff").hidden=$("staffLink").hidden=true;
+      $("connect").textContent=me.slice(0,6)+"…"+me.slice(-4);switchBtn.hidden=outBtn.hidden=false;
+      return toast("No deployment on this network. Switch MetaMask to Ganache (1337) or Sepolia.");}
+    rose=new ethers.Contract(dep.rose,ROSE_ABI,signer);nft=new ethers.Contract(dep.nft,NFT_ABI,signer);
+    isOwner=(await rose.owner()).toLowerCase()===me.toLowerCase();
+  }
+  $("connect").textContent=me.slice(0,6)+"…"+me.slice(-4);switchBtn.hidden=outBtn.hidden=false;
   $("staff").hidden=$("staffLink").hidden=!isOwner;
   await refresh();
 }
+
+async function connect(pickAccount){
+  if(DEMO)return setup();
+  if(!window.ethereum)return toast("Install MetaMask first: metamask.io");
+  // wallet_requestPermissions opens MetaMask's account picker so you can choose a DIFFERENT account
+  if(pickAccount){try{await window.ethereum.request({method:"wallet_requestPermissions",params:[{eth_accounts:{}}]})}catch(e){return toast("⚠️ "+fmtErr(e))}}
+  await window.ethereum.request({method:"eth_requestAccounts"});
+  flag.set(false);
+  await setup();
+}
+
+async function logout(){
+  try{await window.ethereum?.request({method:"wallet_revokePermissions",params:[{eth_accounts:{}}]})}catch{}
+  flag.set(true);resetUI();toast("Logged out. Click Connect, or Switch account to pick another wallet.");
+}
+
 async function refresh(){
   if(!rose)return;
   const [bal,life,tier,disc]=await Promise.all([rose.balanceOf(me),rose.lifetimeEarned(me),nft.tierOf(me),nft.myDiscount(me)]);
@@ -49,10 +89,19 @@ async function loadNfts(){
     out.push(`<div class="card tier">${img?`<img src="${img}">`:""}<h3>${meta.name||"NFT"}</h3><p>Token #${id} · ${await nft.kindOf(id)}</p></div>`)}catch{}}
   $("myNfts").innerHTML=out.join("")||'<p class="muted">No NFTs yet — keep collecting Roses!</p>';
 }
-$("connect").onclick=()=>connect().catch(e=>toast(fmtErr(e)));
+
+$("connect").onclick=()=>{if(me)return toast("Connected: "+me);connect(false).catch(e=>toast(fmtErr(e)))};
+switchBtn.onclick=()=>connect(true).catch(e=>toast(fmtErr(e)));
+outBtn.onclick=logout;
 document.addEventListener("click",e=>{const id=e.target.dataset?.claim;if(id)send("Claiming NFT",()=>nft.claimTier(+id))});
 $("redeemBtn").onclick=()=>send("Redeeming Roses",()=>rose.redeem($("redeemAmt").value));
 $("sendBtn").onclick=()=>send("Gifting Roses",()=>rose.transfer($("sendTo").value,$("sendAmt").value));
 $("rewardBtn").onclick=()=>send("Minting Roses",()=>rose.rewardPurchase($("cust").value,$("euros").value));
 $("occBtn").onclick=()=>send("Minting occasion NFT",()=>nft.mintOccasion($("occTo").value,$("occUri").value));
-if(window.ethereum){ethereum.on("accountsChanged",()=>location.reload());ethereum.on("chainChanged",()=>location.reload())}
+if(window.ethereum&&!DEMO){
+  // follow account / network changes made inside MetaMask, without a page reload
+  ethereum.on("accountsChanged",a=>{if(flag.get())return;a.length?setup().catch(e=>toast(fmtErr(e))):resetUI()});
+  ethereum.on("chainChanged",()=>{if(me&&!flag.get())setup().catch(e=>toast(fmtErr(e)))});
+  // silent auto-reconnect on page load (unless you logged out)
+  if(!flag.get())ethereum.request({method:"eth_accounts"}).then(a=>{if(a.length)setup()}).catch(()=>{});
+}
