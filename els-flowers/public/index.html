@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El’s Flowers &amp; Gifts · Blooming Flower</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+</head><body>
+<header class="nav"><a class="brand" href="#">🌸 El’s Flowers <small>&amp; Gifts</small></a>
+  <nav><a href="#rewards">Rewards</a><a href="#tiers">NFT Tiers</a><a href="#shop">Shop</a><a href="#staff" id="staffLink" hidden>Staff</a></nav>
+  <button id="connect" class="btn">Connect MetaMask</button></header>
+
+<section class="hero"><div class="petals" aria-hidden="true"></div>
+  <p class="eyebrow">County Offaly · Ireland’s first blockchain florist</p>
+  <h1>Bloom with every <em>bouquet</em></h1>
+  <p class="lead">Earn <b>Roses</b> (ERC-20) on every €25, grow from Daisy to Orchid (ERC-721), and send flowers home from anywhere — no card fees, no waiting.</p>
+  <a class="btn big" href="#rewards">View my Roses</a>
+  <div id="net" class="pill">Not connected</div></section>
+
+<section id="rewards"><h2>My Roses</h2>
+  <div class="grid3">
+    <div class="card stat"><span>Roses balance</span><b id="bal">–</b><small>1 Rose per €25 spent</small></div>
+    <div class="card stat"><span>Lifetime earned</span><b id="life">–</b><small>Drives your tier</small></div>
+    <div class="card stat"><span>Current discount</span><b id="disc">–</b><small id="tierName">Connect wallet</small></div></div>
+  <div class="card"><div class="bar"><i id="barFill"></i></div><p id="barText" class="muted">Connect your wallet to see progress.</p>
+    <div class="row"><input id="redeemAmt" type="number" min="1" placeholder="Roses to redeem"><button id="redeemBtn" class="btn ghost">Redeem for discount</button></div>
+    <div class="row"><input id="sendTo" placeholder="Friend’s wallet 0x…"><input id="sendAmt" type="number" min="1" placeholder="Roses"><button id="sendBtn" class="btn ghost">Gift Roses 🎁</button></div></div></section>
+
+<section id="tiers"><h2>Blooming Flower tiers</h2><div class="grid3" id="tierCards"></div>
+  <h3>My NFTs</h3><div class="grid3" id="myNfts"><p class="muted">Connect your wallet.</p></div></section>
+
+<section id="shop"><h2>Shop the season</h2><div class="grid3" id="products"></div>
+  <p class="muted">Demo storefront: the till (or backend) calls <code>rewardPurchase</code> after payment, so Roses are minted straight to the customer’s wallet.</p></section>
+
+<section id="staff" hidden><h2>Staff till <span class="pill">owner only</span></h2>
+  <div class="card"><h3>Record a purchase → mint Roses</h3><div class="row"><input id="cust" placeholder="Customer wallet 0x…"><input id="euros" type="number" placeholder="€ spent"><button id="rewardBtn" class="btn">Reward</button></div>
+  <h3>Mint wedding / occasion NFT</h3><div class="row"><input id="occTo" placeholder="Client wallet 0x…"><input id="occUri" placeholder="ipfs://… metadata (from Pinata)"><button id="occBtn" class="btn">Mint</button></div></div></section>
+
+<div id="toast"></div>
+<footer>© El’s Flowers &amp; Gifts · Tullamore, Co. Offaly · Built on Ethereum (Sepolia / Ganache test networks)</footer>
+<script src="demo.js"></script>
+<script src="app.js"></script></body></html>
